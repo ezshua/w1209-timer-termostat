@@ -31,6 +31,8 @@
 static unsigned int timer;
 static bool state;
 
+static bool alreadyDone = false;
+
 /**
  * @brief Configure appropriate bits for GPIO port A, reset local timer
  *  and reset state.
@@ -63,10 +65,21 @@ void setRelay (bool on)
  */
 void refreshRelay()
 {
+    // таймер закончил работу
+    if (alreadyDone)
+        return;
+
+    // контроль времени
+    if (getParamById(PARAM_TIMER) > 0 && getParamById(PARAM_TIMER) <= getUptimeDecHM()){
+        setRelay(false);
+        alreadyDone = true;
+        return;
+    }
+
     bool mode = getParamById (PARAM_RELAY_MODE);
 
     if (state) { // Relay state is enabled
-        if (getTemperature() < (getParamById (PARAM_THRESHOLD)
+        if (getTemperature() < (getParamById (PARAM_TEMPER)
                                 - (getParamById (PARAM_RELAY_HYSTERESIS) >> 3) ) ) {
             timer++;
 
@@ -81,7 +94,7 @@ void refreshRelay()
             setRelay (!mode);
         }
     } else { // Relay state is disabled
-        if (getTemperature() > (getParamById (PARAM_THRESHOLD)
+        if (getTemperature() > (getParamById (PARAM_TEMPER)
                                 + (getParamById (PARAM_RELAY_HYSTERESIS) >> 3) ) ) {
             timer++;
 
@@ -96,4 +109,10 @@ void refreshRelay()
             setRelay (mode);
         }
     }
+
+    // отключение по-таймеру
+    // if (globalTime == 0)
+    // {
+    //     setRelay(false);
+    // }
 }

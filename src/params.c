@@ -29,7 +29,10 @@
  * P4 - | 0 | 7.0 ... -7.0 Correction of temperature value
  * P5 - | 0 | 0 ... 10 Relay switching delay in minutes
  * P6 - |Off| On/Off Indication of overheating
+ * P  - | 0 | Reserve
+ * P  - | 0 | Reserve
  * TH - | 28| Threshold value
+ * TM - | 10| Timer value
  */
 
 #include "params.h"
@@ -41,10 +44,11 @@
 #define EEPROM_PARAMS_OFFSET    100
 
 static unsigned char paramId;
-static int paramCache[10];
-const int paramMin[] = {0, 1, -45, -50, -70, 0, 0, 0, 0, -500};
-const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100};
-const int paramDefault[] = {0, 20, 110, -50, 0, 0, 0, 0, 0, 280};
+static int paramCache[PARAM_COUNT];
+const int paramMin[] = {0, 1, -45, -50, -70, 0, 0, 0, 0, -500, 0};
+const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100, 240};
+// const int paramDefault[] = {0, 20, 110, -50, 0, 0, 0, 0, 0, 280};
+const int paramDefault[] = {1, 5, 80, 10, 0, 0, 0, 0, 0, 280, 100}; // timer-termostat
 
 /**
  * @brief Check values in the EEPROM to be correct then load them into
@@ -54,14 +58,14 @@ void initParamsEEPROM()
 {
     if (getButton2() && getButton3() ) {
         // Restore parameters to default values
-        for (paramId = 0; paramId < 10; paramId++) {
+        for (paramId = 0; paramId < PARAM_COUNT; paramId++) {
             paramCache[paramId] = paramDefault[paramId];
         }
 
         storeParams();
     } else {
         // Load parameters from EEPROM
-        for (paramId = 0; paramId < 10; paramId++) {
+        for (paramId = 0; paramId < PARAM_COUNT; paramId++) {
             paramCache[paramId] = * (int*) (EEPROM_BASE_ADDR + EEPROM_PARAMS_OFFSET
                                             + (paramId * sizeof paramCache[0]) );
         }
@@ -77,7 +81,7 @@ void initParamsEEPROM()
  */
 int getParamById (unsigned char id)
 {
-    if (id < 10) {
+    if (id < PARAM_COUNT) {
         return paramCache[id];
     }
 
@@ -91,7 +95,7 @@ int getParamById (unsigned char id)
  */
 void setParamById (unsigned char id, int val)
 {
-    if (id < 10) {
+    if (id < PARAM_COUNT) {
         paramCache[id] = val;
     }
 }
@@ -121,6 +125,43 @@ void incParam()
 {
     if (paramId == PARAM_RELAY_MODE || paramId == PARAM_OVERHEAT_INDICATION) {
         paramCache[paramId] = ~paramCache[paramId] & 0x0001;
+    } else if (paramId == PARAM_TIMER) {
+        switch (paramCache[paramId])
+        {
+        case 59:
+            paramCache[paramId] = 100;
+            break;
+        case 159:
+            paramCache[paramId] = 200;
+            break;
+        case 259:
+            paramCache[paramId] = 300;
+            break;
+        case 359:
+            paramCache[paramId] = 400;
+            break;
+        case 459:
+            paramCache[paramId] = 500;
+            break;
+        case 559:
+            paramCache[paramId] = 600;
+            break;
+        case 659:
+            paramCache[paramId] = 700;
+            break;
+        case 759:
+            paramCache[paramId] = 800;
+            break;
+        case 859:
+            paramCache[paramId] = 900;
+            break;
+        case 959:
+            paramCache[paramId] = 0;
+            break;
+        default:
+            paramCache[paramId]++;
+            break;
+        }
     } else if (paramCache[paramId] < paramMax[paramId]) {
         paramCache[paramId]++;
     }
@@ -133,6 +174,43 @@ void decParam()
 {
     if (paramId == PARAM_RELAY_MODE || paramId == PARAM_OVERHEAT_INDICATION) {
         paramCache[paramId] = ~paramCache[paramId] & 0x0001;
+        } else if (paramId == PARAM_TIMER) {
+        switch (paramCache[paramId])
+        {
+        case 0:
+            paramCache[paramId] = 959;
+            break;
+        case 100:
+            paramCache[paramId] = 59;
+            break;
+        case 200:
+            paramCache[paramId] = 159;
+            break;
+        case 300:
+            paramCache[paramId] = 259;
+            break;
+        case 400:
+            paramCache[paramId] = 359;
+            break;
+        case 500:
+            paramCache[paramId] = 459;
+            break;
+        case 600:
+            paramCache[paramId] = 559;
+            break;
+        case 700:
+            paramCache[paramId] = 659;
+            break;
+        case 800:
+            paramCache[paramId] = 759;
+            break;
+        case 900:
+            paramCache[paramId] = 859;
+            break;
+        default:
+            paramCache[paramId]--;
+            break;
+        }
     } else if (paramCache[paramId] > paramMin[paramId]) {
         paramCache[paramId]--;
     }
@@ -153,7 +231,7 @@ unsigned char getParamId()
  */
 void setParamId (unsigned char val)
 {
-    if (val < 10) {
+    if (val < PARAM_COUNT) {
         paramId = val;
     }
 }
@@ -236,8 +314,12 @@ void paramToString (unsigned char id, unsigned char* strBuff)
         ( (unsigned char*) strBuff) [3] = 0;
         break;
 
-    case PARAM_THRESHOLD:
+    case PARAM_TEMPER:
         itofpa (paramCache[id], strBuff, 0);
+        break;
+    
+    case PARAM_TIMER:
+        itofpa (paramCache[id], strBuff, 1);
         break;
 
     default: // Display "OFF" to all unknown ID
@@ -262,7 +344,7 @@ void storeParams()
     }
 
     //  Write to the EEPROM parameters which value is changed.
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < PARAM_COUNT; i++) {
         if (paramCache[i] != (* (int*) (EEPROM_BASE_ADDR + EEPROM_PARAMS_OFFSET
                                         + (i * sizeof paramCache[0]) ) ) ) {
             * (int*) (EEPROM_BASE_ADDR + EEPROM_PARAMS_OFFSET
@@ -298,6 +380,8 @@ static void writeEEPROM (unsigned char val, unsigned char offset)
  *  To emulate a floating-point value, a decimal point can be inserted
  *  before a certain digit.
  *  When the decimal point is not needed, set pointPosition to 6 or more.
+ *  a) Если нужно короткое значение, то установить pointPosition в значение -2 или меньше
+ *  b) Если нужна точка после правой цифры, то установить pointPosition в значение -1
  * @param val
  *  the value to be processed.
  * @param str
@@ -305,26 +389,38 @@ static void writeEEPROM (unsigned char val, unsigned char offset)
  * @param pointPosition
  *  put the decimal point in front of specified digit.
  */
-void itofpa (int val, unsigned char* str, unsigned char pointPosition)
+void itofpa (int val, unsigned char* str, int pointPosition)
 {
     unsigned char i, l, buffer[] = {0, 0, 0, 0, 0, 0};
     bool minus = false;
 
-    // No calculation is required for zero value
-    if (val == 0) {
+    // Специальное формирование нулевого значения со включенной или ненужной точкой
+    if (val == 0 && pointPosition >= -1) {
+        ( (unsigned char*) str) [0] = '0';
+        if (pointPosition == 1) ( (unsigned char*) str) [1] = '.'; 
+        else ( (unsigned char*) str) [1] = '0';
+        if (pointPosition == 0) ( (unsigned char*) str) [2] = '.'; 
+        else ( (unsigned char*) str) [2] = '0';
+        if (pointPosition == -1) ( (unsigned char*) str) [3] = '.';
+        else ( (unsigned char*) str) [3] = '0';
+        ( (unsigned char*) str) [4] = 0;
+        return;
+    }
+
+    // Специальное формирование сокращенного нулевого значения
+    if (val == 0 && pointPosition < -1) {
         ( (unsigned char*) str) [0] = '0';
         ( (unsigned char*) str) [1] = 0;
         return;
     }
-
     // Correction for processing of negative value
     if (val < 0) {
         minus = true;
         val = -val;
     }
 
-    // Forming the reverse string
-    for (i = 0; val != 0; i++) {
+    // Forming the reverse string учитывая положение точки
+    for (i = 0; val != 0 || i <= pointPosition; i++) {
         buffer[i] = '0' + (val % 10);
 
         if (i == pointPosition) {

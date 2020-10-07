@@ -18,6 +18,9 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 
+// количество сохраняемых параметров (длинна буфера для их хранения и обработки)
+#define PARAM_COUNT 11
+
 /* Definition for parameter identifiers */
 #define PARAM_RELAY_MODE                0
 #define PARAM_RELAY_HYSTERESIS          1
@@ -26,7 +29,8 @@
 #define PARAM_TEMPERATURE_CORRECTION    4
 #define PARAM_RELAY_DELAY               5
 #define PARAM_OVERHEAT_INDICATION       6
-#define PARAM_THRESHOLD                 9
+#define PARAM_TEMPER                    9
+#define PARAM_TIMER                     10
 
 int getParam();
 void incParam();
@@ -41,6 +45,6 @@ void setParam (int);
 void setParamId (unsigned char);
 void setParamById (unsigned char, int);
 void paramToString (unsigned char, unsigned char*);
-void itofpa (int, unsigned char*, unsigned char);
+void itofpa (int, unsigned char*, int);
 
 #endif

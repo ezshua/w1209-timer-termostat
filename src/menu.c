@@ -58,7 +58,7 @@ unsigned char getMenuDisplay()
  *  MENU_ROOT
  *  MENU_SELECT_PARAM
  *  MENU_CHANGE_PARAM
- *  MENU_SET_THRESHOLD
+ *  MENU_SET_TEMPER
  *
  * @param event is one of:
  *  MENU_EVENT_PUSH_BUTTON1
@@ -77,12 +77,12 @@ void feedMenu (unsigned char event)
         switch (event) {
         case MENU_EVENT_PUSH_BUTTON1:
             timer = 0;
-            menuDisplay = MENU_SET_THRESHOLD;
+            menuDisplay = MENU_SET_TEMPER;
             break;
 
         case MENU_EVENT_RELEASE_BUTTON1:
             if (timer < MENU_5_SEC_PASSED) {
-                menuState = MENU_SET_THRESHOLD;
+                menuState = MENU_SET_TEMPER;
             }
 
             timer = 0;
@@ -204,7 +204,85 @@ void feedMenu (unsigned char event)
         default:
             break;
         }
-    } else if (menuState == MENU_SET_THRESHOLD) {
+    } 
+    // настраиваем температуру
+    else if (menuState == MENU_SET_TEMPER) {
+        switch (event) {
+        case MENU_EVENT_PUSH_BUTTON1:
+            timer = 0;
+            menuDisplay = MENU_SET_TIMER;
+            setDisplayOff (false);
+            break;
+
+        case MENU_EVENT_RELEASE_BUTTON1:
+            if (timer < MENU_5_SEC_PASSED) {
+                storeParams();
+                menuState = MENU_SET_TIMER;
+                setDisplayOff (false);
+            }
+
+            timer = 0;
+            break;
+
+        case MENU_EVENT_PUSH_BUTTON2:
+            setParamId (PARAM_TEMPER);
+            incParam();
+
+        case MENU_EVENT_RELEASE_BUTTON2:
+            timer = 0;
+            break;
+
+        case MENU_EVENT_PUSH_BUTTON3:
+            setParamId (PARAM_TEMPER);
+            decParam();
+
+        case MENU_EVENT_RELEASE_BUTTON3:
+            timer = 0;
+            break;
+
+        case MENU_EVENT_CHECK_TIMER:
+            if (getButton2() || getButton3() ) {
+                blink = false;
+            } else {
+                blink = (bool) ( (unsigned char) getUptimeTicks() & 0x80);
+            }
+
+            if (timer > MENU_1_SEC_PASSED + MENU_AUTOINC_DELAY) {
+                setParamId (PARAM_TEMPER);
+
+                if (getButton2() ) {
+                    incParam();
+                    timer = MENU_1_SEC_PASSED;
+                } else if (getButton3() ) {
+                    decParam();
+                    timer = MENU_1_SEC_PASSED;
+                }
+            }
+
+            setDisplayOff (blink);
+
+            if (timer > MENU_5_SEC_PASSED) {
+                timer = 0;
+
+                if (getButton1() ) {
+                    menuState = menuDisplay = MENU_SELECT_PARAM;
+                    setDisplayOff (false);
+                    break;
+                }
+
+                storeParams();
+                menuState = menuDisplay = MENU_ROOT;
+                setDisplayOff (false);
+            }
+
+            break;
+
+        default:
+            break;
+        }
+    } 
+    // настраиваем время
+    else if (menuState == MENU_SET_TIMER) {
         switch (event) {
         case MENU_EVENT_PUSH_BUTTON1:
             timer = 0;
@@ -223,7 +301,7 @@ void feedMenu (unsigned char event)
             break;
 
         case MENU_EVENT_PUSH_BUTTON2:
-            setParamId (PARAM_THRESHOLD);
+            setParamId (PARAM_TIMER);
             incParam();
 
         case MENU_EVENT_RELEASE_BUTTON2:
@@ -231,7 +309,7 @@ void feedMenu (unsigned char event)
             break;
 
         case MENU_EVENT_PUSH_BUTTON3:
-            setParamId (PARAM_THRESHOLD);
+            setParamId (PARAM_TIMER);
             decParam();
 
         case MENU_EVENT_RELEASE_BUTTON3:
@@ -246,7 +324,7 @@ void feedMenu (unsigned char event)
             }
 
             if (timer > MENU_1_SEC_PASSED + MENU_AUTOINC_DELAY) {
-                setParamId (PARAM_THRESHOLD);
+                setParamId (PARAM_TIMER);
 
                 if (getButton2() ) {
                     incParam();

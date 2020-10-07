@@ -15,6 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "adc.h"
 #include "buttons.h"
 #include "display.h"
@@ -34,6 +35,8 @@ int main()
 {
     static unsigned char* stringBuffer[7];
     unsigned char paramMsg[] = {'P', '0', 0};
+    bool showTemper = true;
+    unsigned char visPeriod = 0;
 
     initMenu();
     initButtons();
@@ -45,27 +48,46 @@ int main()
 
     INTERRUPT_ENABLE
 
-    // Loop
+    // Loop    
+    visPeriod = getUptimeSeconds();    
     while (true) {
         if (getUptimeSeconds() > 0) {
             setDisplayTestMode (false, "");
         }
 
         if (getMenuDisplay() == MENU_ROOT) {
-            int temp = getTemperature();
-            itofpa (temp, (char*) stringBuffer, 0);
-            setDisplayStr ( (char*) stringBuffer);
+            if (showTemper){
+                // показывать температуру
+                int temp = getTemperature();
+                itofpa(temp, (char *)stringBuffer, 0);
+                setDisplayStr((char *)stringBuffer);
 
-            if (getParamById (PARAM_OVERHEAT_INDICATION) ) {
-                if (temp < getParamById (PARAM_MIN_TEMPERATURE) ) {
-                    setDisplayStr ("LLL");
-                } else if (temp > getParamById (PARAM_MAX_TEMPERATURE) ) {
-                    setDisplayStr ("HHH");
+                if (getParamById(PARAM_OVERHEAT_INDICATION)) {
+                    if (temp < getParamById(PARAM_MIN_TEMPERATURE)) {
+                        setDisplayStr("LLL");
+                    }
+                    else if (temp > getParamById(PARAM_MAX_TEMPERATURE)) {
+                        setDisplayStr("HHH");
+                    }
                 }
+            } else {
+                // показывать время
+                itofpa(getUptimeDecHM(), (char *)stringBuffer, 1);
+                setDisplayStr((char *)stringBuffer);
             }
-        } else if (getMenuDisplay() == MENU_SET_THRESHOLD) {
-            paramToString (PARAM_THRESHOLD, (char*) stringBuffer);
+
+            // смена показателей: температура или время по 3 сек
+            if (getUptimeSeconds() - visPeriod > 3 || getUptimeSeconds() - visPeriod < 0 ) {
+                showTemper = !showTemper;
+                visPeriod = getUptimeSeconds();
+            }
+
+        } else if (getMenuDisplay() == MENU_SET_TEMPER) {
+            paramToString (PARAM_TEMPER, (char*) stringBuffer);
             setDisplayStr ( (char*) stringBuffer);
+        } else if (getMenuDisplay() == MENU_SET_TIMER) {
+            paramToString (PARAM_TIMER, (char*) stringBuffer);            
+            setDisplayStr ( (char*) stringBuffer);            
         } else if (getMenuDisplay() == MENU_SELECT_PARAM) {
             paramMsg[1] = '0' + getParamId();
             setDisplayStr ( (unsigned char*) &paramMsg);

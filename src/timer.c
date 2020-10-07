@@ -41,6 +41,9 @@
 #define BITMASK(L)          ( ~ (0xFFFFFFFF << (L) ) )
 #define NBITMASK(L)         (0xFFFFFFFF << (L) )
 
+// множитель времени для отладки таймера
+#define TICKS_INC           1
+
 /**
  * Uptime counter
  * |--Day--|--Hour--|--Minute--|--Second--|--Ticks--|
@@ -78,6 +81,12 @@ void resetUptime()
 unsigned long getUptime()
 {
     return uptime;
+}
+
+// часы и минуты в десятичном виде
+int getUptimeDecHM()
+{    
+    return getUptimeHours()*100+getUptimeMinutes();
 }
 
 /**
@@ -156,14 +165,14 @@ void TIM4_UPD_handler() __interrupt (23)
         }
     }
 
-    uptime++;
-
+    uptime+=TICKS_INC;
+    
     // Try not to call all refresh functions at once.
-    if ( ( (unsigned char) getUptimeTicks() & 0x0F) == 1) {
+    if ( ( (unsigned char) getUptimeTicks() & 0x0F) == 1*TICKS_INC) {
         refreshMenu();
-    } else if ( ( (unsigned char) getUptimeTicks() & 0xFF) == 2) {
+    } else if ( ( (unsigned char) getUptimeTicks() & 0xFF) == 2*TICKS_INC) {
         startADC();
-    } else if ( ( (unsigned char) getUptimeTicks() & 0xFF) == 3) {
+    } else if ( ( (unsigned char) getUptimeTicks() & 0xFF) == 3*TICKS_INC) {
         refreshRelay();
     }
 
