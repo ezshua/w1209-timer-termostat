@@ -1,3 +1,7 @@
+# w1209-timer-termostat
+Расширение функционала базовой прошивки с добавлением функции таймера. 
+
+
 # w1209-firmware
 The functional equivalent to the original firmware of "Digital Thermostat Module Model XH-W1209".
 
