@@ -31,7 +31,7 @@
 static unsigned int timer;
 static bool state;
 
-static bool alreadyDone = false;
+static bool alreadyDone;
 
 /**
  * @brief Configure appropriate bits for GPIO port A, reset local timer
@@ -43,6 +43,7 @@ void initRelay()
     PA_CR1 |= RELAY_BIT;
     timer = 0;
     state = false;
+    alreadyDone = false;
 }
 
 /**
@@ -109,10 +110,4 @@ void refreshRelay()
             setRelay (mode);
         }
     }
-
-    // отключение по-таймеру
-    // if (globalTime == 0)
-    // {
-    //     setRelay(false);
-    // }
 }
