@@ -31,8 +31,8 @@
  * P6 - |Off| On/Off Indication of overheating
  * P  - | 0 | Reserve
  * P  - | 0 | Reserve
- * TH - | 28| Threshold value
- * TM - | 10| Timer value
+ * TP - | 28| Temperature target
+ * TM - |  0| Timer interval
  */
 
 #include "params.h"
@@ -46,9 +46,9 @@
 static unsigned char paramId;
 static int paramCache[PARAM_COUNT];
 const int paramMin[] = {0, 1, -45, -50, -70, 0, 0, 0, 0, -500, 0};
-const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100, 240};
+const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100, 959};
 // const int paramDefault[] = {0, 20, 110, -50, 0, 0, 0, 0, 0, 280};
-const int paramDefault[] = {1, 5, 80, 10, 0, 0, 0, 0, 0, 280, 100}; // timer-termostat
+const int paramDefault[] = {1, 5, 80, 10, 0, 0, 0, 0, 0, 280, 0}; // timer-termostat
 
 /**
  * @brief Check values in the EEPROM to be correct then load them into
