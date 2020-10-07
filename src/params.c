@@ -46,7 +46,7 @@
 static unsigned char paramId;
 static int paramCache[PARAM_COUNT];
 const int paramMin[] = {0, 1, -45, -50, -70, 0, 0, 0, 0, -500, 0};
-const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100, 959};
+const int paramMax[] = {1, 150, 110, 105, 70, 10, 1, 0, 0, 1100, 2359};
 // const int paramDefault[] = {0, 20, 110, -50, 0, 0, 0, 0, 0, 280};
 const int paramDefault[] = {1, 5, 80, 10, 0, 0, 0, 0, 0, 280, 0}; // timer-termostat
 
@@ -125,43 +125,15 @@ void incParam()
 {
     if (paramId == PARAM_RELAY_MODE || paramId == PARAM_OVERHEAT_INDICATION) {
         paramCache[paramId] = ~paramCache[paramId] & 0x0001;
-    } else if (paramId == PARAM_TIMER) {
-        switch (paramCache[paramId])
-        {
-        case 59:
-            paramCache[paramId] = 100;
-            break;
-        case 159:
-            paramCache[paramId] = 200;
-            break;
-        case 259:
-            paramCache[paramId] = 300;
-            break;
-        case 359:
-            paramCache[paramId] = 400;
-            break;
-        case 459:
-            paramCache[paramId] = 500;
-            break;
-        case 559:
-            paramCache[paramId] = 600;
-            break;
-        case 659:
-            paramCache[paramId] = 700;
-            break;
-        case 759:
-            paramCache[paramId] = 800;
-            break;
-        case 859:
-            paramCache[paramId] = 900;
-            break;
-        case 959:
-            paramCache[paramId] = 0;
-            break;
-        default:
+    } else if (paramId == PARAM_TIMER) {        
+        if (paramCache[paramId] % 100 == 59)
+            paramCache[paramId] += 41;
+        else 
             paramCache[paramId]++;
-            break;
-        }
+        
+        if (paramCache[paramId] == 2400)
+            paramCache[paramId] = 0;
+            
     } else if (paramCache[paramId] < paramMax[paramId]) {
         paramCache[paramId]++;
     }
@@ -175,42 +147,14 @@ void decParam()
     if (paramId == PARAM_RELAY_MODE || paramId == PARAM_OVERHEAT_INDICATION) {
         paramCache[paramId] = ~paramCache[paramId] & 0x0001;
         } else if (paramId == PARAM_TIMER) {
-        switch (paramCache[paramId])
-        {
-        case 0:
-            paramCache[paramId] = 959;
-            break;
-        case 100:
-            paramCache[paramId] = 59;
-            break;
-        case 200:
-            paramCache[paramId] = 159;
-            break;
-        case 300:
-            paramCache[paramId] = 259;
-            break;
-        case 400:
-            paramCache[paramId] = 359;
-            break;
-        case 500:
-            paramCache[paramId] = 459;
-            break;
-        case 600:
-            paramCache[paramId] = 559;
-            break;
-        case 700:
-            paramCache[paramId] = 659;
-            break;
-        case 800:
-            paramCache[paramId] = 759;
-            break;
-        case 900:
-            paramCache[paramId] = 859;
-            break;
-        default:
-            paramCache[paramId]--;
-            break;
-        }
+            if (paramCache[paramId] == 0)
+                paramCache[paramId] = 2359;
+            else
+                if (paramCache[paramId] % 100 == 0)
+                    paramCache[paramId] -= 41;
+                else 
+                    paramCache[paramId]--;
+        
     } else if (paramCache[paramId] > paramMin[paramId]) {
         paramCache[paramId]--;
     }
